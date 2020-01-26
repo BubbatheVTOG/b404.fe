@@ -8,6 +8,7 @@ pipeline {
       steps {
         sh '''
         echo "NODE VERSION:"
+        echo "NODE VERSION:"
         docker run --rm -e CI=true -w /home/node/app -v $PWD/react:/home/node/app node:erbium-alpine node --version
         echo "NPM VERSION:"
         docker run --rm -e CI=true -w /home/node/app -v $PWD/react:/home/node/app node:erbium-alpine npm --version
@@ -22,6 +23,7 @@ pipeline {
     stage('Stage 2: Install Build Deps') {
       steps {
         sh '''
+        docker run --rm -e CI=true -w /home/node/app -v $PWD/react:/home/node/app node:erbium-alpine npm install
         docker run --rm -e CI=true -w /home/node/app -v $PWD/react:/home/node/app node:erbium-alpine npm install
         '''
       }
