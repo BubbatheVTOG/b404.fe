@@ -11,6 +11,10 @@ pipeline {
         docker run --rm -e CI=true -w /home/node/app -v $PWD/react:/home/node/app node:erbium-alpine node --version
         echo "NPM VERSION:"
         docker run --rm -e CI=true -w /home/node/app -v $PWD/react:/home/node/app node:erbium-alpine npm --version
+        echo "NODE VERSION:"
+        docker run --rm -e CI=true -w /home/node/app -v $PWD/react:/home/node/app node:erbium-alpine node --version
+        echo "NPM VERSION:"
+        docker run --rm -e CI=true -w /home/node/app -v $PWD/react:/home/node/app node:erbium-alpine npm --version
         '''
       }
     }
