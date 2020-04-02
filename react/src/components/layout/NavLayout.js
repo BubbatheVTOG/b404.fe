@@ -54,8 +54,8 @@ class NavLayout extends React.Component {
                 </NavLink>
               </Menu.Item>
             ))}
-
-            <div style={{ padding: '10px' }}>Settings</div>
+            <Menu.Divider style={{backgroundColor: '#313C4E'}}/>
+            {/* <div style={{ padding: '10px', fontSize: '.8em' }}>Settings</div> */}
             <Menu.Item key="5">
               <NavLink to="/main-settings">
                 <Icon type="setting" />
@@ -73,10 +73,10 @@ class NavLayout extends React.Component {
                 }
               >
                 <Menu.Item key="6">
-                  <NavLink to="/company">Company</NavLink>
+                  <NavLink to="/company">Companies</NavLink>
                 </Menu.Item>
                 <Menu.Item key="7">
-                  <NavLink to="/people">People</NavLink>
+                  <NavLink to="/people">Users</NavLink>
                 </Menu.Item>
               </SubMenu>
             )}

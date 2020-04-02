@@ -1,243 +1,354 @@
 import React, { Component } from 'react';
 import SortableTree from 'react-sortable-tree';
-import { addNodeUnderParent, removeNodeAtPath, changeNodeAtPath  }  from 'react-sortable-tree';
-import { 
-    Button,
-    Input,
-    Select,
-    message } from 'antd';
+import {
+  addNodeUnderParent,
+  removeNodeAtPath,
+  changeNodeAtPath
+} from 'react-sortable-tree';
+import { axiosError } from '../../utils/axiosError';
+import { Button, Input, Select, message, Switch } from 'antd';
 import 'react-sortable-tree/style.css';
 //import qs from 'qs';
 import axios from 'axios';
-import { TOKEN_KEY/*, UUID_KEY*/ } from '../../constants/auth'
+import { TOKEN_KEY, DEFAULT_TREE } from '../../constants';
+import { getVerbs, getPerson } from '../../utils/api';
 
 const { Option } = Select;
 
 export default class WorkflowBuilder extends Component {
+  constructor(props) {
+    super(props);
+    this.updateTreeData = this.updateTreeData.bind(this);
+    this.addNode = this.addNewNode.bind(this);
+    this.removeNode = this.removeNode.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
+    this.getAllVerbs = this.getAllVerbs.bind(this);
+    this.handleNameChange = this.handleNameChange.bind(this);
+    this.handleDescriptionChange = this.handleDescriptionChange.bind(this);
+    this.setTreeData = this.setTreeData.bind(this);
+    message.config({
+      maxCount: 1
+    });
 
-    constructor(props) {
-        super(props);
-        this.updateTreeData = this.updateTreeData.bind(this);
-        this.addNode = this.addNewNode.bind(this);
-        this.removeNode = this.removeNode.bind(this);
-        this.handleSubmit = this.handleSubmit.bind(this);
-        message.config({
-            maxCount: 1,
-        });
+    this.state = {
+      workflowID: 0,
+      wfName: '',
+      wfDescription: '',
+      visible: false,
+      loading: false,
+      verbs: [],
+      people: [],
+      treeData: [DEFAULT_TREE]
+    };
+  }
 
-        this.state = {
-            wfName: '',
-            wfDescription: '',
-            loading: false,
-            verbs: [],
-            treeData: [{
-                title: 1,
-                subtitle: 'Insert description here',
-                expanded: false
-            }]
-        };
+  componentDidMount() {
+    this.getAllVerbs();
+    this.getAllPeople();
+  }
 
-        const url = window.__env__.API_URL + '/blink/api/verb/';
-        axios.get(
-        url,
-        {
-            headers: {
-            'Content-Type' : 'application/x-www-form-urlencoded',
-            'Authorization' : localStorage.getItem(TOKEN_KEY)
-            }
-        }
-        ).then(response => {
-        if (response.status === 200){
-            this.setState({
+  getAllVerbs() {
+    getVerbs()
+      .then(response => {
+        if (response.status === 200) {
+          this.setState({
+            workflowID: this.props.workflow.workflowID,
+            wfName: this.props.workflow.name,
+            wfDescription: this.props.workflow.description,
             verbs: response.data,
-            treeData: [{
-                title: response.data[0].verbID,
-                subtitle: 'Insert description here',
-                expanded: false
-            }]
-            })
+            treeData: this.props.workflow.steps
+          });
         }
-        }).catch(function (error) {
-        message.destroy()
-        if (error.response) {
-            // Request made and server responded
-            message.error(error.response.data.error);
-        } else if (error.request) {
-            // The request was made but no response was received
-            message.error("Server not responding");
-        } else {
-            // Something happened in setting up the request that triggered an Error
-            message.error("Error setting up request");
-        }
-        });
-    }
+      })
+      .catch(axiosError);
+  }
+  getAllPeople() {
+    getPerson()
+      .then(response => {
+        response.status === 200 &&
+          this.setState({
+            people: response.data
+          });
+      })
+      .catch(axiosError);
+  }
 
-    handleSubmit = async e => {
-        e.preventDefault();
-        //const {wfName, username, password, fName, lName, email, title, accessLevelID} = this.state.user
-        //const id = UUID
-        const url = window.__env__.API_URL + '/blink/api/workflow'
-        const requestObject = {
-            name: this.state.wfName.text,
-            description: this.state.wfDescription.text,
-            steps: this.state.treeData
-        }
-        this.setState({ loading: true });
-        console.log(requestObject);
-        
-        axios.post(
-            url,
-            requestObject,
-            {
-            headers: {
-                'Content-Type' : 'application/x-www-form-urlencoded',
-                'Authorization' : localStorage.getItem(TOKEN_KEY)
-            }
-            }
-        ).then(response => {
-            //this.setState({ loading: true });
-            if (response.status === 200){
+  componentDidUpdate(prevProps) {
+    if (this.props.workflow !== prevProps.workflow) {
+      if (this.props.workflow !== null) {
+        this.setState({
+          workflowID: this.props.workflow.workflowID,
+          treeData: this.props.workflow.steps,
+          wfName: this.props.workflow.name,
+          wfDescription: this.props.workflow.description
+        });
+      }
+    }
+  }
+
+  handleSubmit = async e => {
+    e.preventDefault();
+    //const {wfName, username, password, fName, lName, email, title, accessLevelID} = this.state.user
+    //const id = UUID
+    const url = window.__env__.API_URL + '/blink/api/workflow/template';
+    const requestObject = {
+      workflowID: this.state.workflowID,
+      name: this.state.wfName,
+      description: this.state.wfDescription,
+      steps: this.state.treeData
+    };
+    this.setState({ loading: true });
+
+    if (this.props.isNew) {
+      axios
+        .post(url, requestObject, {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: localStorage.getItem(TOKEN_KEY)
+          }
+        })
+        .then(response => {
+          //this.setState({ loading: true });
+          if (response.status === 200) {
             this.setState({ loading: false });
             message.success('Data saved successfully');
-            }
-        }).catch(function (error) {
-            message.destroy()
+            window.location.reload(true);
+          }
+        })
+        .catch(axiosError);
+    } else {
+      axios
+        .put(url, requestObject, {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: localStorage.getItem(TOKEN_KEY)
+          }
+        })
+        .then(response => {
+          if (response.status === 200) {
             this.setState({ loading: false });
-            if (error.response) {
-            // Request made and server responded
-            message.error(error.response.data.error);
-            } else if (error.request) {
-            // The request was made but no response was received
-            message.error("Server not responding");
-            } else {
-            // Something happened in setting up the request that triggered an Error
-            message.error("Error setting up request");
-            }
-        });
-      };
+            message.success('Data saved successfully');
+            window.location.reload(true);
+          }
+        })
+        .catch(axiosError);
+    }
+  };
 
-    addNewNode(rowInfo) {
-        const NEW_NODE = { title: this.state.verbs[0].verbID, subtitle: 'Insert description here...'};
-        const newTree = addNodeUnderParent({
-          treeData: this.state.treeData,
-          newNode: NEW_NODE,
-          expandParent: true,
-          parentKey: rowInfo ? rowInfo.treeIndex : undefined,
-          getNodeKey: ({ treeIndex }) => treeIndex,
-        });
-        this.updateTreeData(newTree.treeData);
-      }
-    
-      removeNode(rowInfo) {
-        const { path } = rowInfo;
-        const newTree = removeNodeAtPath({
-            treeData: this.state.treeData,
-            path,
-            getNodeKey: ({ treeIndex }) => treeIndex,
-            });
-            if(newTree.length !== 0) {
-                this.updateTreeData(newTree);
-            }
-      }
-    
-    updateTreeData(treeData) {
-        this.setState({ treeData });
-        //console.log(this.state)
+  addNewNode(rowInfo) {
+    const NEW_NODE = {
+      ...DEFAULT_TREE,
+      title: this.state.verbs[0].verbID
+    };
+    const newTree = addNodeUnderParent({
+      treeData: this.state.treeData,
+      newNode: NEW_NODE,
+      expandParent: true,
+      parentKey: rowInfo ? rowInfo.treeIndex : undefined,
+      getNodeKey: ({ treeIndex }) => treeIndex
+    });
+    this.updateTreeData(newTree.treeData);
+  }
+
+  removeNode(rowInfo) {
+    const { path } = rowInfo;
+    const newTree = removeNodeAtPath({
+      treeData: this.state.treeData,
+      path,
+      getNodeKey: ({ treeIndex }) => treeIndex
+    });
+    if (newTree.length !== 0) {
+      this.updateTreeData(newTree);
     }
-    
-    render() {
-        const getNodeKey = ({ treeIndex }) => treeIndex;
-        const children = [];
-            this.state.verbs.forEach(element => {
-                children.push(<Option key={element.verbID}>{element.description}</Option>);
-            });
-        return (
-            <div style={{ width: '100%', height: '100%' }}>
-                <div style={{display: 'flex'}}>
-                <div style={{display: 'flex', flexDirection: 'row', marginRight: '35px'}}> 
-                <h3 style={{margin: '0'}}>Name: </h3>
-                <Input size="small" onChange={event => {
-                                const text = event.target.value;
-                                this.setState({
-                                    wfName: {text}
-                                  });
-                                }} 
-                placeholder="Enter workflow name..." >
-                </Input>
-                </div>
-                <div style={{display: 'flex', flexDirection: 'row'}}>
-                <h3 style={{margin: '0'}}>Description: </h3>
-                <Input size="small" onChange={event => {
-                                const text = event.target.value;
-                                this.setState({
-                                    wfDescription: {text}
-                                  });
-                                }} 
-                placeholder="Enter workflow description..." >
-                </Input>
-                </div>
-                </div>
-                <SortableTree
-                         treeData={this.state.treeData}
-                         onChange={this.updateTreeData}
-                         generateNodeProps={rowInfo => ({
-                         title: (
-                            <Select defaultValue="1" size="small" style={{ width: 120 }} onChange={event => {
-                                const { path } = rowInfo;
-                                const title = parseInt(event);
-                                   this.setState(state => ({
-                                   treeData: changeNodeAtPath({
-                                   treeData: state.treeData,
-                                   path,
-                                   getNodeKey,
-                                   newNode: { ...rowInfo.node, title },
-                                   }),
-                                   }));
-                                   }}>
-                            {children}
-                            </Select>
-                             ),
-                            subtitle: (
-                            <Input
-                            style={{ marginTop: '12px' }}
-                            value={rowInfo.node.subtitle}
-                            size="small"
-                            onChange={event => {
-                            const { path } = rowInfo;
-                            const subtitle = event.target.value;
-    
-                                this.setState(state => ({
-                                treeData: changeNodeAtPath({
-                                treeData: state.treeData,
-                                path,
-                                getNodeKey,
-                                newNode: { ...rowInfo.node, subtitle },
-                                }),
-                                }));
-                                }}
-                                />
-                                ),
-                             buttons: [
-                                      <div>
-                                       <Button label='Delete'
-                                            onClick={(event) => this.removeNode(rowInfo)}>Remove
-                                        </Button>
-                                       <Button label='Add'
-                                            onClick={(event) => this.addNewNode(rowInfo)}>Add
-                                        </Button>
-                                       </div>,
-                                    ],
-                             style: {
-                                      height: '50px',
-                                    }
-                          })}>
-                </SortableTree>
-                <div style={{display: 'flex', justifyContent: 'flex-end', marginTop: '-60px' }}>
-                <Button type="primary" loading={this.state.loading} label='submit' onClick={this.handleSubmit}>
-                    Submit
+  }
+
+  setTreeData(tree) {
+    return {
+      ...tree,
+      title: tree.children && tree.children.length ? 0 : tree.title,
+      children: tree.children ? tree.children.map(this.setTreeData) : []
+    };
+  }
+
+  updateTreeData(treeData) {
+    const newTrees = treeData.map(this.setTreeData);
+    this.setState({ treeData: newTrees });
+  }
+
+  handleNameChange = e => {
+    this.setState({
+      wfName: e.target.value
+    });
+  };
+
+  handleDescriptionChange = e => {
+    this.setState({
+      wfDescription: e.target.value
+    });
+  };
+
+  render() {
+    const getNodeKey = ({ treeIndex }) => treeIndex;
+    const children = [];
+    this.state.verbs.forEach(element => {
+      children.push(<Option key={element.verbID}>{element.name}</Option>);
+    });
+
+    return (
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column'
+        }}
+      >
+        <div style={{ display: 'flex', marginBottom: '30px' }}>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              marginRight: '35px'
+            }}
+          >
+            <h6 className="wfInputText">Name: </h6>
+            <Input
+              value={this.state.wfName}
+              onChange={this.handleNameChange}
+              placeholder="Enter workflow name..."
+            ></Input>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'row' }}>
+            <h6 className="wfInputText">Description: </h6>
+            <Input
+              value={this.state.wfDescription}
+              onChange={this.handleDescriptionChange}
+              placeholder="Enter description..."
+            ></Input>
+          </div>
+        </div>
+        <SortableTree
+          style={{
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            position: 'relative',
+            paddingLeft: '5px'
+          }}
+          treeData={this.state.treeData}
+          onChange={this.updateTreeData}
+          generateNodeProps={rowInfo => ({
+            title: (
+              <Select
+                value={rowInfo.node.title.toString()}
+                size="small"
+                disabled={
+                  rowInfo.node.children && !!rowInfo.node.children.length
+                }
+                style={{ width: 120 }}
+                onChange={event => {
+                  const { path } = rowInfo;
+                  const title = parseInt(event);
+                  this.setState(state => ({
+                    treeData: changeNodeAtPath({
+                      treeData: state.treeData,
+                      path,
+                      getNodeKey,
+                      newNode: { ...rowInfo.node, title }
+                    })
+                  }));
+                }}
+              >
+                {children}
+              </Select>
+            ),
+            subtitle: (
+              <Input
+                style={{
+                  marginTop: '12px'
+                }}
+                placeholder="Enter a description"
+                value={rowInfo.node.subtitle}
+                size="small"
+                onChange={event => {
+                  const { path } = rowInfo;
+                  const subtitle = event.target.value;
+
+                  this.setState(state => ({
+                    treeData: changeNodeAtPath({
+                      treeData: state.treeData,
+                      path,
+                      getNodeKey,
+                      newNode: { ...rowInfo.node, subtitle }
+                    })
+                  }));
+                }}
+              />
+            ),
+            buttons: [
+              <div style={{ display: 'flex' }}>
+                <Button
+                  style={{ marginRight: 5 }}
+                  label="Delete"
+                  onClick={event => this.removeNode(rowInfo)}
+                >
+                  Remove
                 </Button>
+                <Button
+                  label="Add"
+                  onClick={event => this.addNewNode(rowInfo)}
+                  style={{ marginRight: 5 }}
+                >
+                  Add
+                </Button>
+                <div>
+                  <div>Asynchronous</div>
+                  <Switch
+                    checked={rowInfo.node.asynchronous}
+                    disabled={
+                      !(rowInfo.node.children && rowInfo.node.children.length)
+                    }
+                    onClick={checked => {
+                      const { path } = rowInfo;
+
+                      this.setState(state => ({
+                        treeData: changeNodeAtPath({
+                          treeData: state.treeData,
+                          path,
+                          getNodeKey,
+                          newNode: {
+                            ...rowInfo.node,
+                            asynchronous: checked
+                          }
+                        })
+                      }));
+                    }}
+                  />
                 </div>
-            </div>
-        );
-    }
+              </div>
+            ],
+            style: {
+              height: '60px'
+            }
+          })}
+        ></SortableTree>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            marginTop: '1rem'
+          }}
+        >
+          <Button
+            type="primary"
+            loading={this.state.loading}
+            label="submit"
+            onClick={this.handleSubmit}
+          >
+            Submit
+          </Button>
+        </div>
+      </div>
+    );
+  }
 }

@@ -10,6 +10,21 @@ body {
     rgba(208, 83, 29, 1) 100%
   );
   height: auto !important;
+  padding-top: 16px;
+}
+
+.headers {
+  margin-bottom: 25px!important;
+}
+
+.wfInputText {
+  padding: 8px;
+}
+
+.viewAllBlockBtn {
+  width: 100%;
+  padding: 1em 2em 3em 1em;
+  max-width: 77em;
 }
 
 code {
@@ -141,4 +156,16 @@ code {
 .logout {
   cursor: pointer;
   margin-right: 30px;
+}
+
+.rst__rowTitleWithSubtitle {
+  font-size: 85%;
+  display: block;
+  height: 0.8rem;
+}
+
+.rst__rowTitle {
+  font-size: 85%;
+  display: block;
+  height: 0.8rem;
 }

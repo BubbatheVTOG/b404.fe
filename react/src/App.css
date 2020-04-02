@@ -1,6 +1,11 @@
-.settings-main {
-  display: flex;
-  justify-content: center;
+.ant-layout-content {
+  min-height: auto!important;
+}
+
+.settings-inner {
+  width: 50%;
+  margin: 0px auto;
+  margin-top: 40px;
 }
 
 .App {

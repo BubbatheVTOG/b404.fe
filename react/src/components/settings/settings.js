@@ -1,8 +1,12 @@
 import React from 'react';
-import { Form, Input, Tooltip, Icon, Button, Spin, message } from 'antd';
+import { Form, Input, Tooltip, Icon, Card, Button, Spin, message } from 'antd';
 import axios from 'axios';
 import qs from 'qs';
 import { TOKEN_KEY, UUID_KEY } from '../../constants/auth';
+import { hash } from './../../utils/hash';
+import SignatureCanvas from 'react-signature-canvas';
+
+let currentComponent;
 
 class SettingsForm extends React.Component {
   constructor(props) {
@@ -20,6 +24,8 @@ class SettingsForm extends React.Component {
   }
 
   componentDidMount() {
+    currentComponent = this;
+
     this.setState({ loading: true });
 
     const url =
@@ -43,7 +49,9 @@ class SettingsForm extends React.Component {
       })
       .catch(function(error) {
         message.destroy();
-        this.setState({ loading: false });
+        currentComponent.setState({
+          loading: false
+        });
         if (error.response) {
           // Request made and server responded
           message.error(error.response.data.error);
@@ -80,7 +88,7 @@ class SettingsForm extends React.Component {
             qs.stringify({
               id,
               username,
-              password,
+              password: password ? hash(password) : '',
               fName,
               lName,
               email,
@@ -102,7 +110,9 @@ class SettingsForm extends React.Component {
           })
           .catch(function(error) {
             message.destroy();
-            this.setState({ loading: false });
+            currentComponent.setState({
+              loading: false
+            });
             if (error.response) {
               // Request made and server responded
               message.error(error.response.data.error);
@@ -130,6 +140,7 @@ class SettingsForm extends React.Component {
     this.setState({
       user: { ...this.state.user, [e.target.name]: e.target.value }
     });
+    console.log(this.sigCanvas.toDataURL());
   };
 
   render() {
@@ -160,186 +171,194 @@ class SettingsForm extends React.Component {
 
     return (
       <div className="settings-main">
-        <Spin spinning={this.state.loading}>
-          <Form
-            {...formItemLayout}
-            hideRequiredMark
-            name="form"
-            labelAlign="left"
-            onSubmit={this.handleSubmit}
-          >
-            <Form.Item style={{ display: 'none' }} label={<span>ID</span>}>
-              {getFieldDecorator('uuid', {
-                initialValue: this.state.user.uuid,
-                valuePropName: 'uuid',
-                rules: [
-                  {
-                    required: true,
-                    message: 'Please input your id!',
-                    whitespace: true
-                  }
-                ]
-              })(
-                <Input
-                  name="uuid"
-                  value={this.state.user.uuid}
-                  disabled
-                  onChange={this.handleChange}
-                />
-              )}
-            </Form.Item>
-            <Form.Item
-              label={
-                <span>
-                  Username&nbsp;
-                  <Tooltip title="What will your username be within the system?">
-                    <Icon type="question-circle-o" />
-                  </Tooltip>
-                </span>
-              }
-            >
-              {getFieldDecorator('username', {
-                initialValue: this.state.user.username,
-                valuePropName: 'username',
-                rules: [
-                  {
-                    required: true,
-                    message: 'Please input your username!',
-                    whitespace: true
-                  }
-                ]
-              })(
-                <Input
-                  name="username"
-                  value={this.state.user.username}
-                  onChange={this.handleChange}
-                />
-              )}
-            </Form.Item>
-            <Form.Item label="Password" hasFeedback>
-              {getFieldDecorator('password', {
-                initialValue: this.state.user.password,
-                valuePropName: 'password',
-                rules: [
-                  {
-                    required: true,
-                    message: 'Please input your password!'
-                  },
-                  {
-                    validator: this.validateToNextPassword
-                  }
-                ]
-              })(
-                <Input.Password
-                  name="password"
-                  value={this.state.user.password}
-                  onChange={this.handleChange}
-                />
-              )}
-            </Form.Item>
-            <Form.Item label={<span>First Name</span>}>
-              {getFieldDecorator('fName', {
-                initialValue: this.state.user.fName,
-                valuePropName: 'fname',
-                rules: [
-                  {
-                    required: true,
-                    message: 'Please input your first name!',
-                    whitespace: true
-                  }
-                ]
-              })(
-                <Input
-                  name="fName"
-                  value={this.state.user.fName}
-                  onChange={this.handleChange}
-                />
-              )}
-            </Form.Item>
-            <Form.Item label={<span>Last Name</span>}>
-              {getFieldDecorator('lName', {
-                initialValue: this.state.user.lName,
-                valuePropName: 'lname',
-                rules: [
-                  {
-                    required: true,
-                    message: 'Please input your last name!',
-                    whitespace: true
-                  }
-                ]
-              })(
-                <Input
-                  name="lName"
-                  value={this.state.user.lName}
-                  onChange={this.handleChange}
-                />
-              )}
-            </Form.Item>
-            <Form.Item label="E-mail">
-              {getFieldDecorator('email', {
-                initialValue: this.state.user.email,
-                valuePropName: 'email',
-                rules: [
-                  {
-                    type: 'email',
-                    message: 'The input is not valid E-mail!'
-                  },
-                  {
-                    required: true,
-                    message: 'Please input your E-mail!'
-                  }
-                ]
-              })(
-                <Input
-                  name="email"
-                  value={this.state.user.email}
-                  onChange={this.handleChange}
-                />
-              )}
-            </Form.Item>
-            <Form.Item label={<span>Title</span>}>
-              {getFieldDecorator('title', {
-                initialValue: this.state.user.title,
-                valuePropName: 'title',
-                rules: [
-                  {
-                    required: true,
-                    message: 'Please input your title!',
-                    whitespace: true
-                  }
-                ]
-              })(
-                <Input
-                  name="title"
-                  value={this.state.user.title}
-                  disabled
-                  onChange={this.handleChange}
-                />
-              )}
-            </Form.Item>
-            <Form.Item
-              style={{ display: 'none' }}
-              label={<span>Access Level</span>}
-            >
-              {getFieldDecorator('accessLevelID', {
-                initialValue: this.state.user.accessLevelID,
-                valuePropName: 'accesslevelid'
-              })(
-                <Input
-                  name="accessLevelID"
-                  value={this.state.user.accessLevelID}
-                  disabled
-                  onChange={this.handleChange}
-                />
-              )}
-            </Form.Item>
-            <Form.Item {...tailFormItemLayout}>
-              <Button type="primary" htmlType="submit">
-                Update
-              </Button>
-            </Form.Item>
-          </Form>
-        </Spin>
+        <Card>
+            <h3 className="headers">Main Settings</h3>
+            <div className="settings-inner">
+              <Spin spinning={this.state.loading}>
+                <Form
+                  {...formItemLayout}
+                  hideRequiredMark
+                  name="form"
+                  labelAlign="left"
+                  onSubmit={this.handleSubmit}
+                >
+                  <Form.Item style={{ display: 'none' }} label={<span>ID</span>}>
+                    {getFieldDecorator('uuid', {
+                      initialValue: this.state.user.uuid,
+                      valuePropName: 'uuid',
+                      rules: [
+                        {
+                          required: true,
+                          message: 'Please input your id!',
+                          whitespace: true
+                        }
+                      ]
+                    })(
+                      <Input
+                        name="uuid"
+                        value={this.state.user.uuid}
+                        disabled
+                        onChange={this.handleChange}
+                      />
+                    )}
+                  </Form.Item>
+                  <Form.Item
+                    label={
+                      <span>
+                        Username&nbsp;
+                        <Tooltip title="What will your username be within the system?">
+                          <Icon type="question-circle-o" />
+                        </Tooltip>
+                      </span>
+                    }
+                  >
+                    {getFieldDecorator('username', {
+                      initialValue: this.state.user.username,
+                      valuePropName: 'username',
+                      rules: [
+                        {
+                          required: true,
+                          message: 'Please input your username!',
+                          whitespace: true
+                        }
+                      ]
+                    })(
+                      <Input
+                        name="username"
+                        value={this.state.user.username}
+                        onChange={this.handleChange}
+                      />
+                    )}
+                  </Form.Item>
+                  <Form.Item label="New password" hasFeedback>
+                    {getFieldDecorator('password', {
+                      initialValue: this.state.user.password,
+                      valuePropName: 'password',
+                      rules: [
+                        {
+                          type: "regexp",
+                          pattern: new RegExp(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/),
+                          message: "Wrong format!"
+                        }
+                      ]
+                    })(
+                      <Input.Password
+                        name="password"
+                        value={this.state.user.password}
+                        onChange={this.handleChange}
+                      />
+                    )}
+                  </Form.Item>
+                  <Form.Item label={<span>First Name</span>}>
+                    {getFieldDecorator('fName', {
+                      initialValue: this.state.user.fName,
+                      valuePropName: 'fname',
+                      rules: [
+                        {
+                          required: true,
+                          message: 'Please input your first name!',
+                          whitespace: true
+                        }
+                      ]
+                    })(
+                      <Input
+                        name="fName"
+                        value={this.state.user.fName}
+                        onChange={this.handleChange}
+                      />
+                    )}
+                  </Form.Item>
+                  <Form.Item label={<span>Last Name</span>}>
+                    {getFieldDecorator('lName', {
+                      initialValue: this.state.user.lName,
+                      valuePropName: 'lname',
+                      rules: [
+                        {
+                          required: true,
+                          message: 'Please input your last name!',
+                          whitespace: true
+                        }
+                      ]
+                    })(
+                      <Input
+                        name="lName"
+                        value={this.state.user.lName}
+                        onChange={this.handleChange}
+                      />
+                    )}
+                  </Form.Item>
+                  <Form.Item label="E-mail">
+                    {getFieldDecorator('email', {
+                      initialValue: this.state.user.email,
+                      valuePropName: 'email',
+                      rules: [
+                        {
+                          type: 'email',
+                          message: 'The input is not valid E-mail!'
+                        },
+                        {
+                          message: 'Please input your E-mail!'
+                        }
+                      ]
+                    })(
+                      <Input
+                        name="email"
+                        value={this.state.user.email}
+                        onChange={this.handleChange}
+                      />
+                    )}
+                  </Form.Item>
+                  <Form.Item
+                    style={{ display: 'none' }} 
+                    label={<span>Title</span>}>
+                    {getFieldDecorator('title', {
+                      initialValue: this.state.user.title,
+                      valuePropName: 'title',
+                      rules: [
+                        {
+                          message: 'Please input your title!',
+                          whitespace: true
+                        }
+                      ]
+                    })(
+                      <Input
+                        name="title"
+                        value={this.state.user.title}
+                        disabled
+                        onChange={this.handleChange}
+                      />
+                    )}
+                  </Form.Item>
+                  <Form.Item
+                    style={{ display: 'none' }}
+                    label={<span>Access Level</span>}
+                  >
+                    {getFieldDecorator('accessLevelID', {
+                      initialValue: this.state.user.accessLevelID,
+                      valuePropName: 'accesslevelid'
+                    })(
+                      <Input
+                        name="accessLevelID"
+                        value={this.state.user.accessLevelID}
+                        disabled
+                        onChange={this.handleChange}
+                      />
+                    )}
+                  </Form.Item>
+                  <SignatureCanvas ref={(ref) => { this.sigCanvas = ref; }} 
+                                       penColor='green'
+                                       canvasProps={{width: 500, height: 200, className: 'sigCanvas'}}
+                                       onEnd={this.handleChange}
+                  />
+                  <Form.Item {...tailFormItemLayout}>
+                    <Button type="primary" htmlType="submit">
+                      Update
+                    </Button>
+                  </Form.Item>
+                </Form>
+              </Spin>
+            </div>
+          </Card>
       </div>
     );
   }

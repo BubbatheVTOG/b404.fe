@@ -8,7 +8,6 @@ import {
   Tag,
   Divider,
   Modal,
-  Icon,
   message
 } from 'antd';
 import axios from 'axios';
@@ -432,7 +431,7 @@ class AdminTable extends React.Component {
       <React.Fragment>
         <div>
           <Card>
-            <h1>Users</h1>
+            <h3 className="headers">Users</h3>
             <Table
               columns={this.columns}
               rowKey={record => record.id}
@@ -468,13 +467,11 @@ class AdminTable extends React.Component {
             />
             <Button
               type="primary"
-              shape="circle"
+              //shape="circle"
               size="default"
               onClick={this.showAddModal}
             >
-              <b>
-                <Icon type="plus" />
-              </b>
+              + Create
             </Button>
             {this.state.addvisible && (
               <PeopleModal

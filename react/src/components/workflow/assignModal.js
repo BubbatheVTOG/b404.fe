@@ -3,9 +3,9 @@ import { Divider, Modal, Progress, Select } from "antd";
 
 const { Option } = Select;
 
-export const AssignModal = ({ companies, onCancel, title, onOk }) => (
-  <Modal title={title} visible onOk={onOk} onCancel={onCancel}>
-    <Progress percent={30} />
+export const AssignModal = ({ workflow, companies, onCancel, title, onOk }) => (
+  <Modal title={workflow.name} visible onOk={onOk} onCancel={onCancel}>
+    <Progress percent={workflow.progress} />
     <Divider type="horizontal" />
     <p>
       <b>Company*</b>
@@ -18,9 +18,9 @@ export const AssignModal = ({ companies, onCancel, title, onOk }) => (
   </Modal>
 );
 
-export const AssignPeople = ({ person, document, onCancel, title, onOk }) => (
-  <Modal title={title} visible onOk={onOk} onCancel={onCancel}>
-    <Progress percent={30} />
+export const AssignPeople = ({ workflow, person, document, onCancel, title, onOk }) => (
+  <Modal title={workflow.name} visible onOk={onOk} onCancel={onCancel}>
+    <Progress percent={workflow.progress} />
     <Divider type="horizontal" />
     <p>
       <b>Person*</b>

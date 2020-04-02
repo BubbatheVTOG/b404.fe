@@ -1,31 +1,20 @@
 import React from 'react';
-import { Table, Button, Divider, Modal, Spin, message } from 'antd';
+import { Table, Spin, message, Button, Divider, Modal } from 'antd';
 import axios from 'axios';
-import { AssignModal } from '../assignModal';
-import { AssignPeople } from '../assignModal';
-import WorkflowBuilder from '../../wf-builder/workflowBuilder';
-import { TOKEN_KEY, DEFAULT_TREE } from '../../../constants';
+import { TOKEN_KEY/*, UUID_KEY*/ } from '../../../constants/auth'
+import qs from 'qs';
 
 let currentComponent;
 
 const { confirm } = Modal;
 
-const defaultWorkflow = {
-  name: '',
-  description: '',
-  steps: [DEFAULT_TREE]
-};
-
-class Templates extends React.Component {
+class ArchivedWorkflows extends React.Component {
   constructor(props) {
     super(props);
-    this.showModalDefault = this.showModalDefault.bind(this);
     this.state = {
       workflow: null,
       data: [],
       loading: true,
-      visible: false,
-      isNew: false,
       companyVisible: false,
       companyOptions: [],
       personVisible: false,
@@ -39,22 +28,18 @@ class Templates extends React.Component {
         title: 'Action',
         dataIndex: this.state.data,
         key: 'x',
-        render: workflow => (
+        render: (workflow) => (
           <React.Fragment>
-            <Button
-              type="link"
-              size="small"
-              onClick={e => this.showModal(workflow)}
-            >
-              Update
+            <Button type="link" size="small" onClick={e => this.showDeleteConfirm(e, workflow.workflowID)}>
+              Delete
             </Button>
             <Divider type="vertical" />
             <Button
               type="link"
               size="small"
-              onClick={e => this.showDeleteConfirm(e, workflow.workflowID)}
+              onClick={e => this.showArchiveConfirm(e, workflow.workflowID)}
             >
-              Delete
+              Unarchive
             </Button>
           </React.Fragment>
         )
@@ -63,46 +48,45 @@ class Templates extends React.Component {
   }
 
   getWorkflows() {
-    const url = window.__env__.API_URL + '/blink/api/workflow/templates';
-    axios
-      .get(url, {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: localStorage.getItem(TOKEN_KEY)
+    const url = window.__env__.API_URL + '/blink/api/workflow/archived';
+        axios.get(
+        url,
+        {
+            headers: {
+            'Content-Type' : 'application/json',
+            'Authorization' : localStorage.getItem(TOKEN_KEY)
+            }
         }
-      })
-      .then(response => {
-        if (response.status === 200) {
-          this.setState({
-            loading: false
-          });
-          console.log(response);
-          this.setState({
-            data: response.data
-          });
+        ).then(response => {
+        if (response.status === 200){
+            this.setState({
+              loading: false
+            });
+            console.log(response);
+            this.setState({
+              data: response.data
+            });
         }
-      })
-      .catch(function(error) {
+        }).catch(function (error) {
         currentComponent.setState({
           loading: false
         });
-        message.destroy();
+        message.destroy()
         if (error.response) {
-          // Request made and server responded
-          message.error(error.response.data.error);
+            // Request made and server responded
+            message.error(error.response.data.error);
         } else if (error.request) {
-          // The request was made but no response was received
-          message.error('Server not responding');
+            // The request was made but no response was received
+            message.error("Server not responding");
         } else {
-          // Something happened in setting up the request that triggered an Error
-          message.error('Error setting up request');
+            // Something happened in setting up the request that triggered an Error
+            message.error("Error setting up request");
         }
-      });
+        });
   }
 
   componentDidMount() {
     currentComponent = this;
-
     this.setState({
       loading: true
     });
@@ -111,7 +95,7 @@ class Templates extends React.Component {
     this.getAllPeople();
   }
 
-  showCompanyModal = workflow => {
+  showCompanyModal = (workflow) => {
     console.log(workflow);
     this.setState({
       workflow: workflow,
@@ -198,9 +182,11 @@ class Templates extends React.Component {
       });
   }
 
+  getAllDocuments() {}
+
   showDeleteConfirm = (e, id) => {
     confirm({
-      title: 'Are you sure you want to delete this workflow?',
+      title: 'Are you sure delete this workflow?',
       content: 'If you delete this workflow it will become unusable!',
       okText: 'Yes',
       okType: 'danger',
@@ -209,7 +195,7 @@ class Templates extends React.Component {
         axios
           .delete(window.__env__.API_URL + '/blink/api/workflow/' + id, {
             headers: {
-              Authorization: localStorage.getItem('token')
+              'Authorization': localStorage.getItem('token')
             }
           })
           .then(response => {
@@ -227,23 +213,43 @@ class Templates extends React.Component {
     });
   };
 
-  getAllDocuments() {}
-
-  showModal = workflow => {
-    this.setState({
-      workflow: workflow,
-      isNew: false,
-      visible: true
+  showArchiveConfirm = (e, id) => {
+    confirm({
+      title: 'Are you sure you want to unarchive this Workflow?',
+      okText: 'Yes',
+      okType: 'danger',
+      cancelText: 'No',
+      onOk() {
+        axios
+          .put(window.__env__.API_URL + '/blink/api/workflow/unarchive',qs.stringify({
+            id
+          }), {
+            headers: {
+              'Content-Type' : 'application/x-www-form-urlencoded',
+              'Authorization': localStorage.getItem('token')
+            }
+          })
+          .then(response => {
+            if (response.status === 200) {
+              // console.log('works');
+              window.location.reload(false);
+            } else {
+              // console.log(response);
+            }
+          });
+      },
+      onCancel() {
+        // console.log('Cancel');
+      }
     });
   };
 
-  showModalDefault() {
+  showModal = (workflow) => {
     this.setState({
-      workflow: defaultWorkflow,
-      isNew: true,
+      workflow: workflow,
       visible: true
     });
-  }
+  };
 
   handleOk = e => {
     console.log(e);
@@ -256,69 +262,27 @@ class Templates extends React.Component {
   handleCancel = e => {
     console.log(e);
     this.setState({
-      workflow: null,
       visible: false
     });
   };
 
   render() {
+    //const { visible, loading } = this.state;
+    //const workflow = this.state.workflow;
     return (
       <React.Fragment>
         <Spin spinning={this.state.loading}>
-          <Table
-            columns={this.columns}
-            expandedRowRender={record => (
-              <p style={{ margin: 0 }}>Created: {record.createdDate}</p>
-            )}
-            dataSource={this.state.data}
-            rowKey={record => record.workflowID}
-          />
+        <Table
+          columns={this.columns}
+          expandedRowRender={record => (
+            <p style={{ margin: 0 }}>Created: {record.createdDate}</p>
+          )}
+          dataSource={this.state.data}
+          rowKey={record => record.workflowID}
+        />
         </Spin>
-        {this.state.companyVisible && (
-          <AssignModal
-            workflow={this.state.workflow}
-            companies={this.state.companyOptions}
-            onCancel={this.handleCompanyCancel}
-            title="Assign Modal"
-            onOk={this.showPersonModal}
-          />
-        )}
-        {this.state.personVisible && (
-          <AssignPeople
-            workflow={this.state.workflow}
-            person={this.state.personOptions}
-            documents={this.state.personDocuments}
-            visible={this.state.visible}
-            onCancel={this.handlePersonCancel}
-            title="Assign Modal"
-            onOk={this.handlePersonOk}
-          />
-        )}
-        <Button type="primary" onClick={this.showModalDefault}>
-          + Create
-        </Button>
-        <Modal
-          bodyStyle={{ height: '81vh' }}
-          title={
-            this.state.isNew ? (
-              "Create a new workflow template"
-            ) : (
-              "Edit workflow template"
-            )
-          }
-          width="75vw"
-          footer={null}
-          visible={this.state.visible}
-          onOk={this.handleOk}
-          onCancel={this.handleCancel}
-        >
-          <WorkflowBuilder
-            isNew={this.state.isNew}
-            workflow={this.state.workflow}
-          />
-        </Modal>
       </React.Fragment>
     );
   }
 }
-export default Templates;
+export default ArchivedWorkflows;

@@ -2,6 +2,7 @@ import React from "react";
 import { Tabs } from "antd";
 import Templates from "./tabs/templates";
 import ActiveWorkflows from "./tabs/activeWorkflow";
+import ArchivedWorkflows from "./tabs/archivedWorkflows";
 
 const { TabPane } = Tabs;
 
@@ -20,7 +21,7 @@ class WorkflowTable extends React.Component {
           <ActiveWorkflows />
         </TabPane>
         <TabPane tab="Archived Workflows" key="3">
-          Content of Tab Pane 3
+          <ArchivedWorkflows />
         </TabPane>
       </Tabs>
     );

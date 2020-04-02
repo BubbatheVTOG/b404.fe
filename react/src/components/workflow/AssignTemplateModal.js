@@ -4,7 +4,7 @@ import { Form as AntForm, Modal } from 'antd';
 import React from 'react';
 import { required } from '../../utils/validators';
 
-// const { Option } = Select;
+const { Option } = Select;
 
 const defaults = {
   templates: ''
@@ -12,10 +12,10 @@ const defaults = {
 
 const AssignTemplateModalForm = ({
   initialValues = defaults,
+  templates,
   onSubmit,
   onCancel,
-  title,
-  form
+  title
 }) => {
   return (
     <Modal title={title} visible footer={[]} onCancel={onCancel}>
@@ -36,17 +36,17 @@ const AssignTemplateModalForm = ({
           >
             <p></p>
             <p>Template Name</p>
-            <Form.Item name="template" validate={required}>
+            <Form.Item name="templates" validate={required}>
               <Select
                 style={{ width: '100%' }}
                 placeholder="Select Workflow Template"
                 name="template"
               >
-                {/* {roles.map(({ value, label }) => (
+                {templates.map(({ value, label }) => (
                   <Option value={value} key={value}>
                     {label}
                   </Option>
-                ))} */}
+                ))}
               </Select>
             </Form.Item>
             <p></p>
